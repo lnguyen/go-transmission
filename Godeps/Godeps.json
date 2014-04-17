@@ -1,0 +1,5 @@
+{
+	"ImportPath": "github.com/longnguyen11288/go-transmission",
+	"GoVersion": "go1.2.1",
+	"Deps": []
+}
