@@ -53,8 +53,23 @@ func TestRemoveTorrent(t *testing.T) {
 	defer teardown()
 
 	Convey("Test removing torrent", t, func() {
-		result, err := transmissionClient.RemoveTorrent(1)
+		result, err := transmissionClient.RemoveTorrent(1, true)
 		So(err, ShouldBeNil)
 		So(result, ShouldEqual, "success")
+	})
+}
+
+func TestAddTorrent(t *testing.T) {
+	setup(`{"arguments":{"torrent-added":
+  {"hashString":"875a2d90068c32b4ce7992eaf56cd03f5be0d193",
+  "id":23,"name":"Test Name"}}
+  ,"result":"success"}`)
+	defer teardown()
+
+	Convey("Test adding torrent", t, func() {
+		addedTorrent, err := transmissionClient.AddTorrent("/tmp/file", "/home/lnguyen")
+		So(err, ShouldBeNil)
+		So(addedTorrent.Name, ShouldEqual, "Test Name")
+		So(addedTorrent.Id, ShouldEqual, 23)
 	})
 }
