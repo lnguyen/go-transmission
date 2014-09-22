@@ -46,8 +46,7 @@ type TorrentAdded struct {
 	Name       string `json:"name"`
 }
 
-func New(url string,
-	username string, password string) TransmissionClient {
+func New(url string, username string, password string) TransmissionClient {
 	apiclient := client.NewClient(url, username, password)
 	tc := TransmissionClient{apiclient: apiclient}
 	return tc
