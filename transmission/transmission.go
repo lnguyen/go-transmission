@@ -3,12 +3,14 @@ package transmission
 import (
 	"encoding/base64"
 	"encoding/json"
-	"github.com/longnguyen11288/go-transmission/client"
+	"fmt"
 	"io/ioutil"
+	"net/http"
+
+	"github.com/longnguyen11288/go-transmission/client"
 )
 
-var ()
-
+//TransmissionClient to talk to transmission
 type TransmissionClient struct {
 	apiclient client.ApiClient
 }
@@ -29,8 +31,9 @@ type arguments struct {
 	TorrentAdded TorrentAdded `json:"torrent-added"`
 }
 
+//Torrent struct for torrents
 type Torrent struct {
-	Id            int     `json:"id"`
+	ID            int     `json:"id"`
 	Name          string  `json:"name"`
 	Status        int     `json:"status"`
 	LeftUntilDone int     `json:"leftUntilDone"`
@@ -38,27 +41,31 @@ type Torrent struct {
 	UploadRatio   float64 `json:"uploadRatio"`
 	RateDownload  int     `json:"rateDownload"`
 	RateUpload    int     `json:"rateUpload"`
+	DownloadDir   string  `json:"downloadDir"`
 }
 
+//TorrentAdded data returning
 type TorrentAdded struct {
 	HashString string `json:"hashString"`
-	Id         int    `json:"id"`
+	ID         int    `json:"id"`
 	Name       string `json:"name"`
 }
 
+//New create new transmission torrent
 func New(url string, username string, password string) TransmissionClient {
 	apiclient := client.NewClient(url, username, password)
 	tc := TransmissionClient{apiclient: apiclient}
 	return tc
 }
 
+//GetTorrents get a list of torrents
 func (ac *TransmissionClient) GetTorrents() ([]Torrent, error) {
 	var getCommand command
 	var outputCommand command
 	getCommand.Method = "torrent-get"
 	getCommand.Arguments.Fields = []string{"id", "name",
 		"status", "leftUntilDone", "eta", "uploadRatio",
-		"rateDownload", "rateUpload"}
+		"rateDownload", "rateUpload", "downloadDir"}
 	body, err := json.Marshal(getCommand)
 	if err != nil {
 		return []Torrent{}, err
@@ -67,6 +74,7 @@ func (ac *TransmissionClient) GetTorrents() ([]Torrent, error) {
 	if err != nil {
 		return []Torrent{}, err
 	}
+	fmt.Println(string(output))
 	err = json.Unmarshal(output, &outputCommand)
 	if err != nil {
 		return []Torrent{}, err
@@ -74,6 +82,7 @@ func (ac *TransmissionClient) GetTorrents() ([]Torrent, error) {
 	return outputCommand.Arguments.Torrents, nil
 }
 
+//RemoveTorrent remove the torrents
 func (ac *TransmissionClient) RemoveTorrent(id int, removeFile bool) (string, error) {
 	var removeCommand command
 	var outputCommand command
@@ -96,16 +105,34 @@ func (ac *TransmissionClient) RemoveTorrent(id int, removeFile bool) (string, er
 	return outputCommand.Result, nil
 }
 
-func (ac *TransmissionClient) AddTorrent(file string, downloadDir string) (TorrentAdded, error) {
+//AddTorrentByURL add torrent by url
+func (ac *TransmissionClient) AddTorrentByURL(url string, downloadDir string) (TorrentAdded, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return TorrentAdded{}, err
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return TorrentAdded{}, err
+	}
+	return ac.addTorrent(body, downloadDir)
+}
+
+//AddTorrentByFile add torrent by file
+func (ac *TransmissionClient) AddTorrentByFile(file string, downloadDir string) (TorrentAdded, error) {
+	fileData, err := ioutil.ReadFile(file)
+	if err != nil {
+		return TorrentAdded{}, err
+	}
+	return ac.addTorrent(fileData, downloadDir)
+}
+
+func (ac *TransmissionClient) addTorrent(data []byte, downloadDir string) (TorrentAdded, error) {
 	var addCommand command
 	var outputCommand command
 
-	encodedFile, err := encodeFile(file)
-	if err != nil {
-	}
-
 	addCommand.Method = "torrent-add"
-	addCommand.Arguments.MetaInfo = encodedFile
+	addCommand.Arguments.MetaInfo = base64.StdEncoding.EncodeToString(data)
 	addCommand.Arguments.DownloadDir = downloadDir
 
 	body, err := json.Marshal(addCommand)
