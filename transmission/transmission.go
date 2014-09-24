@@ -3,7 +3,6 @@ package transmission
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -44,6 +43,7 @@ type Torrent struct {
 	DownloadDir   string  `json:"downloadDir"`
 	IsFinished    bool    `json:"isFinished"`
 	PercentDone   float64 `json:"percentDone"`
+	SeedRatioMode int     `json:"seedRatioMode"`
 }
 
 //TorrentAdded data returning
@@ -68,7 +68,7 @@ func (ac *TransmissionClient) GetTorrents() ([]Torrent, error) {
 	getCommand.Arguments.Fields = []string{"id", "name",
 		"status", "leftUntilDone", "eta", "uploadRatio",
 		"rateDownload", "rateUpload", "downloadDir",
-		"isFinished", "percentDone"}
+		"isFinished", "percentDone", "seedRatioMode"}
 	body, err := json.Marshal(getCommand)
 	if err != nil {
 		return []Torrent{}, err
@@ -77,7 +77,6 @@ func (ac *TransmissionClient) GetTorrents() ([]Torrent, error) {
 	if err != nil {
 		return []Torrent{}, err
 	}
-	fmt.Println(string(output))
 	err = json.Unmarshal(output, &outputCommand)
 	if err != nil {
 		return []Torrent{}, err
