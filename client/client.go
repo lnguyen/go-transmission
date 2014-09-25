@@ -34,6 +34,17 @@ func (ac *ApiClient) Post(body string) ([]byte, error) {
 	if err != nil {
 		return make([]byte, 0), err
 	}
+	if res.StatusCode == 409 {
+		ac.getToken()
+		authRequest, err := ac.authRequest("POST", body)
+		if err != nil {
+			return make([]byte, 0), err
+		}
+		res, err = ac.client.Do(authRequest)
+		if err != nil {
+			return make([]byte, 0), err
+		}
+	}
 	resBody, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return make([]byte, 0), err
