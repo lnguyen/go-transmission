@@ -84,6 +84,16 @@ func (ac *TransmissionClient) GetTorrents() ([]Torrent, error) {
 	return outputCommand.Arguments.Torrents, nil
 }
 
+//StartTorrent start the torrent
+func (ac *TransmissionClient) StartTorrent(id int) (string, error) {
+	return ac.sendSimpleCommand("torrent-start", id)
+}
+
+//StopTorrent start the torrent
+func (ac *TransmissionClient) StopTorrent(id int) (string, error) {
+	return ac.sendSimpleCommand("torrent-stop", id)
+}
+
 //RemoveTorrent remove the torrents
 func (ac *TransmissionClient) RemoveTorrent(id int, removeFile bool) (string, error) {
 	var removeCommand command
@@ -159,4 +169,27 @@ func encodeFile(file string) (string, error) {
 	}
 
 	return base64.StdEncoding.EncodeToString(fileData), nil
+}
+
+func (ac *TransmissionClient) sendSimpleCommand(method string, id int) (result string, err error) {
+	cmd := command{Method: method}
+	cmd.Arguments.Ids = []int{id}
+	resp, err := ac.sendCommand(cmd)
+	return resp.Result, err
+}
+
+func (ac *TransmissionClient) sendCommand(cmd command) (response command, err error) {
+	body, err := json.Marshal(cmd)
+	if err != nil {
+		return
+	}
+	output, err := ac.apiclient.Post(string(body))
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(output, &response)
+	if err != nil {
+		return
+	}
+	return response, nil
 }
