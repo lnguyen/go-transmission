@@ -27,6 +27,7 @@ type arguments struct {
 	DeleteData   bool         `json:"delete-local-data,omitempty"`
 	DownloadDir  string       `json:"download-dir,omitempty"`
 	MetaInfo     string       `json:"metainfo,omitempty"`
+	Filename     string       `json:"filename,omitempty"`
 	TorrentAdded TorrentAdded `json:"torrent-added"`
 }
 
@@ -128,6 +129,30 @@ func (ac *TransmissionClient) AddTorrentByURL(url string, downloadDir string) (T
 		return TorrentAdded{}, err
 	}
 	return ac.addTorrent(body, downloadDir)
+}
+
+//AddTorrentByFilename add torrent by filename
+func (ac *TransmissionClient) AddTorrentByFilename(filename string, downloadDir string) (TorrentAdded, error) {
+	var addCommand command
+	var outputCommand command
+
+	addCommand.Method = "torrent-add"
+	addCommand.Arguments.Filename = filename
+	addCommand.Arguments.DownloadDir = downloadDir
+
+	body, err := json.Marshal(addCommand)
+	if err != nil {
+		return TorrentAdded{}, err
+	}
+	output, err := ac.apiclient.Post(string(body))
+	if err != nil {
+		return TorrentAdded{}, err
+	}
+	err = json.Unmarshal(output, &outputCommand)
+	if err != nil {
+		return TorrentAdded{}, err
+	}
+	return outputCommand.Arguments.TorrentAdded, nil
 }
 
 //AddTorrentByFile add torrent by file
