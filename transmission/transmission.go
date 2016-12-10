@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/longnguyen11288/go-transmission/client"
+	"github.com/lnguyen/go-transmission/client"
 )
 
 //TransmissionClient to talk to transmission
